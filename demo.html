@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AOB Analyst | Intelligent Bioinformatics Routing</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: { 500: '#0ea5e9', 600: '#0284c7' },
+            dark: { bg: '#020617', card: '#0f172a', border: '#1e293b' },
+          },
+          animation: {
+            float: 'float 6s ease-in-out infinite',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body {
+      background-color: #020617;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+
+    .cursor-glow {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+      position: fixed;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      mix-blend-mode: screen;
+      transition: opacity 0.3s;
+    }
+
+    .glass-card {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+    }
+    .glass-card:hover {
+      border-color: rgba(56, 189, 248, 0.3);
+      box-shadow: 0 0 30px rgba(56, 189, 248, 0.1);
+      transform: translateY(-5px);
+    }
+
+    .bg-grid {
+      background-size: 50px 50px;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s ease-out;
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .cursor-blink::after {
+      content: '|';
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* demo scrollbar */
+    .custom-scrollbar::-webkit-scrollbar { width: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.18); border-radius: 999px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(2,6,23,0.2); }
+  </style>
+</head>
+
+<body>
+  <div id="landing-app" class="relative min-h-screen" @mousemove="handleMouseMove">
+    <div class="cursor-glow" :style="{ left: mouseX + 'px', top: mouseY + 'px' }"></div>
+
+    <div class="fixed inset-0 z-0">
+      <div class="absolute inset-0 bg-grid"></div>
+      <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+      <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+    </div>
+
+    <nav class="fixed top-0 w-full z-50 border-b border-white/5 bg-dark-bg/80 backdrop-blur-md">
+      <div class="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <i class="ph-fill ph-dna text-2xl text-brand-500"></i>
+          <span class="text-xl font-bold tracking-tight text-white">AOB <span class="text-slate-500 font-light">Analyst</span></span>
+        </div>
+        <div class="flex gap-4">
+          <a href="#demo" class="hidden md:block px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">How it Works</a>
+          <!-- CHANGED: Enter App -> Contact Us -->
+          <a
+            href="mailto:medis2025@outlook.com"
+            class="px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white text-sm font-medium transition-all backdrop-blur-sm"
+          >
+            Contact Us
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <section class="relative z-10 pt-32 pb-20 px-6 max-w-7xl mx-auto text-center">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-xs font-mono mb-8 reveal active">
+        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+        SYSTEM ONLINE v2.4
+      </div>
+
+      <h1 class="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6 reveal active transition-delay-100">
+        Bioinformatics logic,<br />
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">Routed Intelligently.</span>
+      </h1>
+
+      <div class="h-16 mb-8 reveal active transition-delay-200">
+        <p class="text-lg md:text-xl text-slate-400 font-light max-w-2xl mx-auto cursor-blink">
+          {{ typewriterText }}
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row justify-center gap-4 reveal active transition-delay-300">
+        <a
+          href="/"
+          class="px-8 py-4 bg-brand-600 hover:bg-brand-500 text-white rounded-lg font-semibold shadow-[0_0_20px_rgba(2,132,199,0.4)] hover:shadow-[0_0_30px_rgba(2,132,199,0.6)] transition-all flex items-center justify-center gap-2"
+        >
+          <i class="ph-bold ph-chat-circle-text"></i>
+          Start Chatting
+        </a>
+        <a
+          href="#demo"
+          class="px-8 py-4 bg-dark-card hover:bg-white/5 border border-dark-border text-slate-300 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+        >
+          <i class="ph-bold ph-code"></i>
+          See API Demo
+        </a>
+      </div>
+    </section>
+
+    <!-- DEMO -->
+    <section id="demo" class="relative z-10 py-20 px-6">
+      <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-12 reveal">
+          <h2 class="text-3xl font-bold text-white mb-2">Interactive Router Kernel</h2>
+          <p class="text-slate-400">Pick a query. The router drafts a plan, selects tools, and stages executable steps.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-dark-card/50 border border-dark-border rounded-xl p-2 backdrop-blur-sm shadow-2xl reveal">
+          <!-- LEFT: INPUT -->
+          <div class="lg:col-span-4 flex flex-col gap-3 p-4">
+            <p class="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2">Input Query</p>
+
+            <button
+              v-for="(item, index) in demoScenarios"
+              :key="index"
+              @click="runDemo(index)"
+              :class="currentScenario === index ? 'bg-brand-600/20 border-brand-500 text-white' : 'bg-dark-bg/50 border-dark-border text-slate-400 hover:bg-white/5'"
+              class="text-left p-4 rounded-lg border transition-all text-sm group relative overflow-hidden"
+            >
+              <div class="flex justify-between items-center mb-1">
+                <span class="font-semibold">{{ item.label }}</span>
+                <i :class="currentScenario === index ? 'ph-bold ph-caret-right text-brand-500' : 'ph-bold ph-caret-right text-transparent group-hover:text-slate-600'"></i>
+              </div>
+              <p class="text-xs opacity-70 truncate">"{{ item.query }}"</p>
+            </button>
+
+            <!-- NEW: Tool palette / plan hint -->
+            <div class="mt-4 p-4 rounded-lg border border-white/5 bg-dark-bg/40">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-xs font-mono text-slate-500 uppercase tracking-widest">Tool Orchestration</p>
+                <span class="text-[10px] font-mono text-slate-500">router → tools → plan</span>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                The demo shows how AOB chooses tools (e.g., FastQC, STAR, DESeq2, PubMed search) and turns them into a structured plan.
+              </p>
+
+              <div class="mt-3 flex flex-wrap gap-2">
+                <span class="px-2 py-1 rounded-md text-[11px] font-mono border border-white/10 bg-white/5 text-slate-300 inline-flex items-center gap-1">
+                  <i class="ph-bold ph-wrench"></i> QC
+                </span>
+                <span class="px-2 py-1 rounded-md text-[11px] font-mono border border-white/10 bg-white/5 text-slate-300 inline-flex items-center gap-1">
+                  <i class="ph-bold ph-dna"></i> Alignment
+                </span>
+                <span class="px-2 py-1 rounded-md text-[11px] font-mono border border-white/10 bg-white/5 text-slate-300 inline-flex items-center gap-1">
+                  <i class="ph-bold ph-chart-bar"></i> Differential
+                </span>
+                <span class="px-2 py-1 rounded-md text-[11px] font-mono border border-white/10 bg-white/5 text-slate-300 inline-flex items-center gap-1">
+                  <i class="ph-bold ph-book-open-text"></i> Literature
+                </span>
+                <span class="px-2 py-1 rounded-md text-[11px] font-mono border border-white/10 bg-white/5 text-slate-300 inline-flex items-center gap-1">
+                  <i class="ph-bold ph-file-code"></i> JSON Plan
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: OUTPUT -->
+          <div class="lg:col-span-8 bg-[#0b101b] rounded-lg border border-dark-border relative overflow-hidden flex flex-col min-h-[520px]">
+            <div class="flex items-center px-4 py-3 bg-[#1e293b]/30 border-b border-white/5 gap-2">
+              <div class="flex gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+              </div>
+
+              <div class="ml-auto text-xs font-mono text-slate-500 flex items-center gap-2">
+                <span v-if="isTyping" class="flex items-center gap-1 text-brand-400">
+                  <i class="ph-bold ph-spinner animate-spin"></i> Routing
+                </span>
+                <span v-else class="text-emerald-500">Idle</span>
+                <span>router.py</span>
+              </div>
+            </div>
+
+            <!-- NEW: Tool-calls & Plan Preview -->
+            <div class="px-5 py-4 border-b border-white/5 bg-[#0b101b]">
+              <div class="flex flex-col md:flex-row gap-4 md:items-start md:justify-between">
+                <div class="flex-1">
+                  <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-2">Selected Tools</p>
+                  <div class="flex flex-wrap gap-2">
+                    <template v-if="hasRun">
+                      <span
+                        v-for="(t, i) in selectedTools"
+                        :key="i"
+                        class="px-2.5 py-1 rounded-full text-[11px] font-mono border border-white/10 bg-white/5 text-slate-200 inline-flex items-center gap-1.5"
+                      >
+                        <i :class="t.icon"></i>
+                        {{ t.name }}
+                      </span>
+                    </template>
+                    <template v-else>
+                      <span class="text-xs text-slate-600">No tools selected yet. Click a query.</span>
+                    </template>
+                  </div>
+                </div>
+
+                <div class="flex-1">
+                  <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-2">Planned Steps</p>
+                  <div class="space-y-2">
+                    <template v-if="hasRun">
+                      <div
+                        v-for="step in planSteps"
+                        :key="step.id"
+                        class="flex items-start gap-2 rounded-lg border border-white/5 bg-white/0 px-3 py-2"
+                      >
+                        <span class="mt-0.5 w-6 h-6 rounded-md bg-brand-500/10 border border-brand-500/20 text-brand-300 text-[11px] font-mono flex items-center justify-center">
+                          {{ step.id }}
+                        </span>
+                        <div class="flex-1">
+                          <div class="flex items-center justify-between gap-3">
+                            <span class="text-xs text-slate-200 font-semibold">{{ step.tool }}</span>
+                            <span class="text-[10px] font-mono text-slate-500">{{ step.stage }}</span>
+                          </div>
+                          <p class="text-xs text-slate-400 leading-snug mt-0.5">{{ step.desc }}</p>
+                        </div>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <span class="text-xs text-slate-600">AOB will translate your intent into an ordered execution plan.</span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Terminal -->
+            <div class="p-6 font-mono text-xs md:text-sm overflow-auto flex-1 custom-scrollbar">
+              <div v-if="!hasRun" class="h-full flex flex-col items-center justify-center text-slate-600">
+                <i class="ph-duotone ph-terminal-window text-6xl mb-4 opacity-50"></i>
+                <p>Ready to route.</p>
+                <p class="text-xs mt-2">Click a query on the left.</p>
+              </div>
+
+              <div v-else>
+                <div class="flex gap-2 mb-4 text-slate-400 border-b border-white/5 pb-2">
+                  <span class="text-brand-500">user@aob:~$</span>
+                  <span>{{ demoScenarios[currentScenario].query }}</span>
+                </div>
+                <pre class="text-slate-300 leading-relaxed"><span v-html="highlightedOutput"></span><span class="animate-pulse bg-slate-500 w-2 h-4 inline-block align-middle ml-1"></span></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="relative z-10 py-20 px-6 bg-dark-bg/50">
+      <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="glass-card p-8 rounded-2xl reveal">
+          <div class="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 mb-6">
+            <i class="ph-fill ph-tree-structure text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-3">Intent Routing</h3>
+          <p class="text-slate-400 text-sm">
+            Separates casual questions from rigorous analysis tasks. The router understands whether you need a definition or a DESeq2 pipeline.
+          </p>
+        </div>
+
+        <div class="glass-card p-8 rounded-2xl reveal transition-delay-100">
+          <div class="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 mb-6">
+            <i class="ph-fill ph-eye text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-3">Full Transparency</h3>
+          <p class="text-slate-400 text-sm">
+            No black boxes. Review the specific parameters, steps, and tool versions before the agent executes a single line of code.
+          </p>
+        </div>
+
+        <div class="glass-card p-8 rounded-2xl reveal transition-delay-200">
+          <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-6">
+            <i class="ph-fill ph-code-block text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-3">Structured Output</h3>
+          <p class="text-slate-400 text-sm">
+            Returns pure JSON plans and structured tool results, making it easy to integrate with downstream visualization dashboards.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="py-12 border-t border-dark-border text-center text-slate-600 text-sm relative z-10">
+      <p>&copy; 2024 AOB Bioinformatics Project. Built for precision.</p>
+    </footer>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, computed } = Vue;
+
+    createApp({
+      setup() {
+        // --- 鼠标特效 ---
+        const mouseX = ref(0);
+        const mouseY = ref(0);
+        const handleMouseMove = (e) => {
+          mouseX.value = e.clientX;
+          mouseY.value = e.clientY;
+        };
+
+        // --- Hero 打字机 ---
+        const typewriterText = ref('');
+        const fullText = 'Transforming natural language into executable bioinformatics pipelines.';
+
+        // --- Demo ---
+        const currentScenario = ref(-1);
+        const hasRun = ref(false);
+        const isTyping = ref(false);
+        const terminalText = ref('');
+
+        // NEW: tool list + steps (shown in UI)
+        const selectedTools = ref([]);
+        const planSteps = ref([]);
+
+        const TOOL_ICON = {
+          fastp: 'ph-bold ph-scissors',
+          FastQC: 'ph-bold ph-magnifying-glass',
+          MultiQC: 'ph-bold ph-stack',
+          STAR: 'ph-bold ph-dna',
+          Salmon: 'ph-bold ph-fish',
+          DESeq2: 'ph-bold ph-chart-line',
+          'edgeR': 'ph-bold ph-chart-line-up',
+          'limma-voom': 'ph-bold ph-chart-line-up',
+          RAG_VectorDB: 'ph-bold ph-database',
+          PubMed: 'ph-bold ph-book-open-text',
+          EuropePMC: 'ph-bold ph-books',
+          LLM_Summarizer: 'ph-bold ph-brain',
+          Planner: 'ph-bold ph-clipboard-text',
+          'File_Resolver': 'ph-bold ph-folder-open'
+        };
+
+        const demoScenarios = [
+          {
+            label: 'RNA-Seq Analysis',
+            query: 'Analyze the differential expression between Treated vs Control.',
+            // NEW: explicit tool calls & step plan preview
+            tools: ['Planner', 'fastp', 'STAR', 'DESeq2', 'MultiQC'],
+            steps: [
+              { id: 1, tool: 'fastp', stage: 'QC', desc: 'Adapter trimming + quality filtering; generate JSON/HTML report.' },
+              { id: 2, tool: 'FastQC', stage: 'QC', desc: 'Per-sample QC to detect overrepresented sequences and bias.' },
+              { id: 3, tool: 'MultiQC', stage: 'QC', desc: 'Aggregate QC across all samples into a single report.' },
+              { id: 4, tool: 'STAR', stage: 'Alignment', desc: 'Align reads to hg38; produce sorted BAM + mapping metrics.' },
+              { id: 5, tool: 'DESeq2', stage: 'Differential', desc: 'Model Treated vs Control; output log2FC, p-value, FDR tables.' },
+            ],
+            json: `{
+  "intent": "RNASeq_Differential_Expression",
+  "confidence": 0.99,
+  "router": {
+    "strategy": "tool_orchestrated_planning",
+    "checks": ["metadata_valid", "replicates_present", "design_matrix_ready"]
+  },
+  "tool_calls": [
+    {"id": "T1", "tool": "fastp", "purpose": "read_qc_and_trimming"},
+    {"id": "T2", "tool": "FastQC", "purpose": "per_sample_qc"},
+    {"id": "T3", "tool": "MultiQC", "purpose": "aggregate_qc"},
+    {"id": "T4", "tool": "STAR", "purpose": "align_to_hg38"},
+    {"id": "T5", "tool": "DESeq2", "purpose": "differential_expression"}
+  ],
+  "plan": {
+    "steps": [
+      {"step": 1, "call": "T1", "outputs": ["trimmed.fastq.gz", "fastp.html", "fastp.json"]},
+      {"step": 2, "call": "T2", "outputs": ["fastqc.zip", "fastqc.html"]},
+      {"step": 3, "call": "T3", "outputs": ["multiqc_report.html"]},
+      {"step": 4, "call": "T4", "outputs": ["aligned.bam", "mapping_stats.txt"]},
+      {"step": 5, "call": "T5", "outputs": ["DE_results.tsv", "QC_plots.pdf"]}
+    ]
+  },
+  "params": {
+    "p_value_cutoff": 0.05,
+    "lfc_threshold": 1.0,
+    "fdr_method": "BH"
+  }
+}`
+          },
+          {
+            label: 'Quality Check',
+            query: 'Check the quality of these FASTQ files.',
+            tools: ['Planner', 'FastQC', 'MultiQC', 'fastp'],
+            steps: [
+              { id: 1, tool: 'FastQC', stage: 'QC', desc: 'Run per-file QC (base quality, GC content, adapters).' },
+              { id: 2, tool: 'MultiQC', stage: 'QC', desc: 'Merge QC results across samples for rapid review.' },
+              { id: 3, tool: 'fastp', stage: 'Fix', desc: 'Optional trimming/filtering if adapter/quality issues are detected.' },
+            ],
+            json: `{
+  "intent": "QC_Assessment",
+  "confidence": 0.95,
+  "router": {
+    "strategy": "tool_orchestrated_planning",
+    "checks": ["fastq_detected", "paired_end_inferred"]
+  },
+  "target_files": ["sample_1.fq.gz", "sample_2.fq.gz"],
+  "tool_calls": [
+    {"id": "T1", "tool": "FastQC", "purpose": "per_sample_qc"},
+    {"id": "T2", "tool": "MultiQC", "purpose": "aggregate_qc"},
+    {"id": "T3", "tool": "fastp", "purpose": "optional_fix_if_needed"}
+  ],
+  "plan": {
+    "steps": [
+      {"step": 1, "call": "T1", "outputs": ["fastqc.html", "fastqc.zip"]},
+      {"step": 2, "call": "T2", "outputs": ["multiqc_report.html"]},
+      {"step": 3, "call": "T3", "condition": "if_adapter_or_low_quality", "outputs": ["trimmed.fastq.gz", "fastp.html"]}
+    ]
+  }
+}`
+          },
+          {
+            label: 'General Question',
+            query: 'What is the difference between FPKM and TPM?',
+            tools: ['Planner', 'RAG_VectorDB', 'PubMed', 'LLM_Summarizer'],
+            steps: [
+              { id: 1, tool: 'RAG_VectorDB', stage: 'Retrieve', desc: 'Pull internal docs: RNA quantification notes + pipeline conventions.' },
+              { id: 2, tool: 'PubMed', stage: 'Evidence', desc: 'Fetch a couple of canonical references about normalization.' },
+              { id: 3, tool: 'LLM_Summarizer', stage: 'Answer', desc: 'Synthesize into an actionable explanation + when to use each.' },
+            ],
+            json: `{
+  "intent": "Knowledge_QA",
+  "confidence": 0.92,
+  "router": {
+    "strategy": "retrieve_then_summarize",
+    "pipeline_trigger": false
+  },
+  "tool_calls": [
+    {"id": "T1", "tool": "RAG_VectorDB", "purpose": "retrieve_internal_notes"},
+    {"id": "T2", "tool": "PubMed", "purpose": "fetch_primary_references"},
+    {"id": "T3", "tool": "LLM_Summarizer", "purpose": "compose_final_answer"}
+  ],
+  "plan": {
+    "steps": [
+      {"step": 1, "call": "T1", "top_k": 6},
+      {"step": 2, "call": "T2", "query": "FPKM TPM normalization RNA-seq"},
+      {"step": 3, "call": "T3", "style": "concise_with_examples"}
+    ]
+  }
+}`
+          },
+        ];
+
+        const runDemo = (index) => {
+          if (isTyping.value) return;
+          currentScenario.value = index;
+          hasRun.value = true;
+          isTyping.value = true;
+          terminalText.value = '';
+
+          // NEW: update tool/steps panels immediately
+          const scenario = demoScenarios[index];
+          selectedTools.value = (scenario.tools || []).map((name) => ({
+            name,
+            icon: TOOL_ICON[name] || 'ph-bold ph-wrench',
+          }));
+          planSteps.value = scenario.steps || [];
+
+          const targetString = scenario.json;
+          let i = 0;
+
+          const typeChar = () => {
+            if (i < targetString.length) {
+              terminalText.value += targetString.charAt(i);
+              i++;
+              setTimeout(typeChar, Math.random() * 20 + 10);
+            } else {
+              isTyping.value = false;
+            }
+          };
+          typeChar();
+        };
+
+        const highlightedOutput = computed(() => {
+          let html = terminalText.value;
+          html = html.replace(/"([^"]+)":/g, '<span class="text-purple-400">"$1"</span>:');
+          html = html.replace(/: "([^"]+)"/g, ': <span class="text-green-400">"$1"</span>');
+          html = html.replace(/: (\d+\.?\d*|true|false|null)/g, ': <span class="text-orange-400">$1</span>');
+          return html;
+        });
+
+        onMounted(() => {
+          let i = 0;
+          const typeHero = () => {
+            if (i < fullText.length) {
+              typewriterText.value += fullText.charAt(i);
+              i++;
+              setTimeout(typeHero, 30);
+            }
+          };
+          setTimeout(typeHero, 500);
+
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) entry.target.classList.add('active');
+              });
+            },
+            { threshold: 0.1 }
+          );
+
+          document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+        });
+
+        return {
+          mouseX,
+          mouseY,
+          handleMouseMove,
+          typewriterText,
+          demoScenarios,
+          currentScenario,
+          runDemo,
+          hasRun,
+          isTyping,
+          highlightedOutput,
+          // NEW
+          selectedTools,
+          planSteps,
+        };
+      },
+    }).mount('#landing-app');
+  </script>
+</body>
+</html>
